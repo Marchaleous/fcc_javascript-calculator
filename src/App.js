@@ -159,27 +159,23 @@ class App extends Component {
         });
         document.getElementById('display').innerText = 0;
         break;
-      case '+':
       case '*':
       case '/':
+      case '+':
         this.calculate(buttonInput);
         break;
       case '-':
         // Appends a negative sign
-        if (this.state.input === '' || this.state.input === '-0') {
-          console.log('first');
+        if (
+          this.state.input === '' &&
+          (this.state.operator !== '' || this.state.currentValue === 0)
+        ) {
           this.setState({
-            input:
-              this.state.input[0] === '-0'
-                ? this.state.input.slice(1)
-                : this.state.input === '0' || this.state.input === ''
-                ? '-0'
-                : '-' + this.state.input,
+            input: '-0',
           });
           document.getElementById('display').innerText = this.state.input;
           // Adds minus operator
         } else {
-          console.log('second');
           this.calculate(buttonInput);
         }
         break;
@@ -211,12 +207,17 @@ class App extends Component {
     const { currentValue, operator, input, history } = this.state;
     let newCurrentValue = currentValue;
 
-    if (buttonInput && operator && (!input || input === '0')) {
+    if (
+      buttonInput &&
+      operator &&
+      (!input || input === '-0' || input === '0')
+    ) {
       this.setState({
         operator: buttonInput,
         history:
           this.state.history.slice(0, this.state.history.length - 1) +
           buttonInput,
+        input: '',
       });
       return;
     }
