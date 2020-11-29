@@ -2,10 +2,10 @@ import { Component } from 'react';
 
 class App extends Component {
   state = {
-    history: '15', // Example
-    input: '0', // Example
-    operator: '*', // Example
-    currentValue: '', // Example
+    history: '',
+    input: '',
+    operator: '',
+    currentValue: 0,
   };
 
   calculatorButtons = [
@@ -133,34 +133,134 @@ class App extends Component {
     document.addEventListener('keydown', this.handleKeyDown);
   }
 
-  // Put all calculator functions here
-  handleInput(input) {
-    switch (input) {
+  handleInput = buttonInput => {
+    switch (buttonInput) {
       case 'Backspace':
         this.setState({
-          input: this.state.input.slice(0, this.state.input.length - 1) || '0',
+          input: this.state.input.slice(0, this.state.input.length - 1) || '',
         });
+        if (this.state.input === '-') {
+          this.setState({ input: '' });
+        }
+        document.getElementById('display').innerText = this.state.input || '0';
         break;
       case 'Delete':
         this.setState({
           input: '0',
         });
+        document.getElementById('display').innerText = this.state.input;
         break;
       case 'Escape':
         this.setState({
           history: '',
-          input: '0',
+          input: '',
           operator: '',
-          currentValue: '',
+          currentValue: 0,
         });
+        document.getElementById('display').innerText = 0;
         break;
-
+      case '+':
+      case '*':
+      case '/':
+        this.calculate(buttonInput);
+        break;
+      case '-':
+        // Appends a negative sign
+        if (this.state.input === '' || this.state.input === '-0') {
+          console.log('first');
+          this.setState({
+            input:
+              this.state.input[0] === '-0'
+                ? this.state.input.slice(1)
+                : this.state.input === '0' || this.state.input === ''
+                ? '-0'
+                : '-' + this.state.input,
+          });
+          document.getElementById('display').innerText = this.state.input;
+          // Adds minus operator
+        } else {
+          console.log('second');
+          this.calculate(buttonInput);
+        }
+        break;
+      case '.':
+        if (!this.state.input.includes('.')) {
+          this.setState({
+            input: this.state.input + buttonInput,
+          });
+        }
+        document.getElementById('display').innerText = this.state.input;
+        break;
+      case '=':
+        this.calculate();
+        break;
       default:
         this.setState({
-          input: this.state.input === '0' ? input : this.state.input + input,
+          input:
+            this.state.input === '' || this.state.input === '0'
+              ? buttonInput
+              : this.state.input === '-0' || this.state.input === '-'
+              ? '-' + buttonInput
+              : this.state.input + buttonInput,
         });
+        document.getElementById('display').innerText = this.state.input;
     }
-  }
+  };
+
+  calculate = buttonInput => {
+    const { currentValue, operator, input, history } = this.state;
+    let newCurrentValue = currentValue;
+
+    if (buttonInput && operator && (!input || input === '0')) {
+      this.setState({
+        operator: buttonInput,
+        history:
+          this.state.history.slice(0, this.state.history.length - 1) +
+          buttonInput,
+      });
+      return;
+    }
+
+    switch (operator) {
+      case '+':
+        console.log('plus');
+        newCurrentValue += +input;
+        break;
+      case '-':
+        newCurrentValue -= +input;
+        break;
+      case '*':
+        newCurrentValue *= +input;
+        break;
+      case '/':
+        console.log('division');
+        newCurrentValue /= +input;
+        break;
+      default:
+        this.setState({
+          operator: buttonInput ? buttonInput : this.state.operator,
+        });
+        newCurrentValue = +input;
+    }
+
+    if (buttonInput) {
+      this.setState({
+        currentValue: newCurrentValue,
+        history: history + (input || '0') + (buttonInput || ''),
+        input: '',
+        operator: buttonInput,
+      });
+      document.getElementById('display').innerText = this.state.currentValue;
+    } else {
+      this.setState({
+        currentValue: 0,
+        history: '',
+        input: newCurrentValue + '',
+        operator: '',
+      });
+      document.getElementById('display').innerText = this.state.input;
+    }
+  };
 
   render() {
     const appStyle = {
@@ -179,13 +279,13 @@ class App extends Component {
       flexDirection: 'column',
       justifyContent: 'center',
       alignItems: 'center',
-      width: 260,
+      width: 275,
       padding: '20px 10px',
     };
 
     return (
-      <div className='App' style={appStyle}>
-        <div className='container' style={containerStyle}>
+      <div style={appStyle}>
+        <div style={containerStyle}>
           <Display props={this.state} />
           <Buttons buttons={this.calculatorButtons} />
         </div>
@@ -194,12 +294,12 @@ class App extends Component {
   }
 }
 
-const Display = ({ props: { history, input, operator, currentValue } }) => {
+const Display = ({ props: { history } }) => {
   const displayStyle = {
     border: '1px solid #333',
     background: '#fff',
     borderRadius: 5,
-    width: 240,
+    width: 260,
     height: 60,
     textAlign: 'right',
     marginBottom: 10,
@@ -218,13 +318,11 @@ const Display = ({ props: { history, input, operator, currentValue } }) => {
   };
 
   return (
-    <div className='display-container' id='display' style={displayStyle}>
-      <h5 id='history' style={historyStyle}>
-        {history} {operator}
-      </h5>
-      <h1 id='input' style={inputStyle}>
-        {input.slice(-15) || currentValue}
-      </h1>
+    <div style={displayStyle}>
+      <h4 style={historyStyle}>{history}</h4>
+      <h2 id='display' style={inputStyle}>
+        0
+      </h2>
     </div>
   );
 };
@@ -235,7 +333,7 @@ const Buttons = ({ buttons }) => {
     gridTemplateColumns: 'repeat(4, 1fr)',
     gap: '5px',
     height: 200,
-    width: 240,
+    width: 260,
   };
   return (
     <div style={buttonsStyle}>
